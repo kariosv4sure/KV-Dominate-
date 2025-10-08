@@ -1,4 +1,7 @@
-// --- Utility: Smooth Animation for Numbers ---
+// === KV LABS Crypto Dashboard Script ===
+// Futuristic | Resilient | Powered by KV LABS ⚡
+
+// --- Utility: Smooth Animated Numbers ---
 function animateNumber(element, start, end, duration = 800) {
   const startTime = performance.now();
   const step = (currentTime) => {
@@ -13,20 +16,37 @@ function animateNumber(element, start, end, duration = 800) {
   requestAnimationFrame(step);
 }
 
+// --- Smart Fetch Wrapper (CORS-Safe + Retry) ---
+async function safeFetch(url, retries = 2) {
+  for (let i = 0; i < retries; i++) {
+    try {
+      const res = await fetch(url, {
+        mode: "cors",
+        headers: { "User-Agent": "Mozilla/5.0 (KVLABS)" },
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      return await res.json();
+    } catch (err) {
+      console.warn(`⚠️ Fetch attempt ${i + 1} failed for ${url}:`, err.message);
+      if (i === retries - 1) throw err;
+      await new Promise((r) => setTimeout(r, 1000));
+    }
+  }
+}
+
 // --- Fetch Top 10 Crypto Data ---
 async function fetchCrypto() {
   try {
-    const res = await fetch(
+    const data = await safeFetch(
       "https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=10&page=1"
     );
-    const data = await res.json();
     const section = document.getElementById("crypto-section");
 
     section.innerHTML = data
       .map((coin) => {
         const price =
           coin.current_price < 0.01
-            ? coin.current_price.toPrecision(6)
+            ? coin.current_price.toPrecision(8)
             : coin.current_price.toLocaleString();
 
         const color = coin.price_change_percentage_24h >= 0 ? "green" : "red";
@@ -36,7 +56,7 @@ async function fetchCrypto() {
             : "shadow-red-500/30 animate-pulse";
 
         return `
-        <div class="crypto-card bg-black/40 p-4 rounded-xl shadow-lg transition-all duration-300 ${glow}">
+        <div class="crypto-card bg-black/40 p-4 rounded-xl shadow-lg transition-all duration-300 ${glow} opacity-0 translate-y-4">
           <div class="flex items-center space-x-3 mb-2">
             <img src="${coin.image}" alt="${coin.name}" class="w-8 h-8 rounded-full border border-gray-700">
             <h4 class="text-xl font-bold text-orange-400">${coin.name}</h4>
@@ -46,48 +66,136 @@ async function fetchCrypto() {
           <p class="text-${color}-400 font-semibold transition-all duration-500">
             ${coin.price_change_percentage_24h.toFixed(2)}%
           </p>
-        </div>
-      `;
+        </div>`;
       })
       .join("");
 
-    // Add fade-in animation
-    document.querySelectorAll(".crypto-card").forEach((card) => {
-      card.style.animation = "fadeIn 0.7s ease";
-    });
+    // Fade-in animation
+    setTimeout(() => {
+      document
+        .querySelectorAll(".crypto-card")
+        .forEach((el, i) =>
+          setTimeout(() => {
+            el.classList.remove("opacity-0", "translate-y-4");
+          }, i * 100)
+        );
+    }, 100);
   } catch (e) {
     console.error("Error loading crypto data:", e);
   }
 }
 
-// --- Fetch Latest Crypto News ---
+// --- Smart Multi-Fallback News Fetcher ---
 async function fetchNews() {
-  try {
-    const res = await fetch("https://api.coinstats.app/public/v1/news?skip=0&limit=6");
-    const data = await res.json();
-    const section = document.getElementById("news-section");
+  const section = document.getElementById("news-section");
+  section.innerHTML = "<p class='text-gray-400'>⏳ Loading crypto news...</p>";
 
-    if (!data.news || data.news.length === 0) {
-      section.innerHTML = "<p>No news available right now.</p>";
+  const sources = [
+    {
+      name: "Reddit",
+      url: "https://www.reddit.com/r/cryptocurrency/top.json?limit=8&t=day",
+      parse: (data) =>
+        data?.data?.children?.map((n) => ({
+          title: n.data.title,
+          url: "https://reddit.com" + n.data.permalink,
+          source: "Reddit",
+          date: new Date(n.data.created_utc * 1000).toLocaleDateString(),
+          image:
+            n.data.thumbnail?.startsWith("http") && n.data.thumbnail.length > 10
+              ? n.data.thumbnail
+              : "https://www.redditinc.com/assets/images/site/reddit-logo.png",
+        })),
+    },
+    {
+      name: "CoinTelegraph",
+      url: "https://api.rss2json.com/v1/api.json?rss_url=https://cointelegraph.com/rss",
+      parse: (data) =>
+        data?.items?.slice(0, 8).map((n) => ({
+          title: n.title,
+          url: n.link,
+          source: "CoinTelegraph",
+          date: new Date(n.pubDate).toLocaleDateString(),
+          image: n.thumbnail || "https://cointelegraph.com/favicon-32x32.png",
+        })),
+    },
+    {
+      name: "Decrypt",
+      url: "https://api.rss2json.com/v1/api.json?rss_url=https://decrypt.co/feed",
+      parse: (data) =>
+        data?.items?.slice(0, 8).map((n) => ({
+          title: n.title,
+          url: n.link,
+          source: "Decrypt",
+          date: new Date(n.pubDate).toLocaleDateString(),
+          image:
+            n.thumbnail ||
+            "https://static.decrypt.co/wp-content/uploads/2020/03/decrypt-favicon.png",
+        })),
+    },
+    {
+      name: "CoinDesk",
+      url: "https://api.rss2json.com/v1/api.json?rss_url=https://www.coindesk.com/arc/outboundfeeds/rss/",
+      parse: (data) =>
+        data?.items?.slice(0, 8).map((n) => ({
+          title: n.title,
+          url: n.link,
+          source: "CoinDesk",
+          date: new Date(n.pubDate).toLocaleDateString(),
+          image: n.thumbnail || "https://www.coindesk.com/favicon.ico",
+        })),
+    },
+  ];
+
+  for (const src of sources) {
+    try {
+      const data = await safeFetch(src.url);
+      const articles = src.parse(data);
+
+      if (!articles || !articles.length) throw new Error("No articles");
+
+      section.innerHTML = articles
+        .map(
+          (n) => `
+          <div class="news-card bg-black/30 rounded-xl p-4 mb-3 hover:bg-black/50 transition border border-gray-800 opacity-0 translate-y-3">
+            <div class="flex items-center space-x-3">
+              <img src="${n.image}" alt="news" class="w-16 h-16 rounded-lg object-cover border border-gray-700">
+              <div>
+                <a href="${n.url}" target="_blank" class="text-orange-400 font-semibold hover:underline">
+                  ${n.title}
+                </a>
+                <p class="text-gray-500 text-sm mt-1">${n.source} • ${n.date}</p>
+              </div>
+            </div>
+          </div>`
+        )
+        .join("");
+
+      // Animate fade-in
+      setTimeout(() => {
+        document
+          .querySelectorAll(".news-card")
+          .forEach((el, i) =>
+            setTimeout(() => {
+              el.classList.remove("opacity-0", "translate-y-3");
+            }, i * 100)
+          );
+      }, 100);
+
+      localStorage.setItem("lastNews", section.innerHTML); // offline cache
+      console.log(`✅ Loaded crypto news from ${src.name}`);
       return;
+    } catch (err) {
+      console.warn(`⚠️ ${src.name} failed:`, err.message);
     }
+  }
 
-    section.innerHTML = data.news
-      .map(
-        (n) => `
-        <div class="bg-black/30 p-4 rounded-lg hover:bg-black/50 transition">
-          <a href="${n.link}" target="_blank" class="text-orange-400 font-semibold hover:underline">
-            ${n.title}
-          </a>
-          <p class="text-gray-500 text-sm mt-1">${n.source} • ${new Date(
-          n.feedDate
-        ).toLocaleDateString()}</p>
-        </div>
-      `
-      )
-      .join("");
-  } catch (e) {
-    console.error("Error loading news:", e);
+  const cached = localStorage.getItem("lastNews");
+  if (cached) {
+    section.innerHTML = cached;
+    console.log("🕓 Showing cached news from last load.");
+  } else {
+    section.innerHTML =
+      "<p class='text-red-500'>🚨 Couldn't load any news sources. Try again later.</p>";
   }
 }
 
@@ -115,7 +223,7 @@ const coinMap = {
   arb: "arbitrum",
 };
 
-// --- Search Term OR Coin ---
+// --- Search Term or Coin ---
 async function searchTerm() {
   const query = document.getElementById("termInput").value.trim().toLowerCase();
   if (!query) return alert("Enter a term or coin!");
@@ -126,36 +234,21 @@ async function searchTerm() {
   definitionEl.innerText = "";
   coinSection.classList.add("hidden");
 
-  // --- Try dictionary term ---
-  try {
-    const termRes = await fetch(`${window.location.origin}/term/${query}`);
-    const termData = await termRes.json();
-
-    if (termData.definition !== "No definition found.") {
-      definitionEl.innerText = termData.definition;
-      return;
-    }
-  } catch (err) {
-    console.error("Error fetching term:", err);
-  }
-
-  // --- Try CoinGecko Directly ---
   try {
     const possibleIds = [query];
     if (coinMap[query]) possibleIds.unshift(coinMap[query]);
 
     let data = null;
     for (const id of possibleIds) {
-      const res = await fetch(`https://api.coingecko.com/api/v3/coins/${id}`);
-      const json = await res.json();
-      if (!json.error) {
-        data = json;
+      const res = await safeFetch(`https://api.coingecko.com/api/v3/coins/${id}`);
+      if (!res.error) {
+        data = res;
         break;
       }
     }
 
     if (!data) {
-      alert("❌ No term or coin found! Try 'bitcoin', 'xrp', 'ada', 'solana', etc.");
+      alert("❌ No term or coin found! Try 'bitcoin', 'xrp', 'solana', etc.");
       return;
     }
 
@@ -175,24 +268,15 @@ async function searchTerm() {
   }
 }
 
-// --- Auto Refresh every 30 seconds ---
+// --- Auto Refresh ---
 setInterval(fetchCrypto, 30000);
+setInterval(fetchNews, 120000);
 
 // --- Initial Load ---
 fetchCrypto();
 fetchNews();
 
-// --- Small Animation CSS Inject ---
-const style = document.createElement("style");
-style.textContent = `
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(5px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-`;
-document.head.appendChild(style);
-
-// --- Real-Time Live Price Updates using Binance WebSocket ---
+// --- Live Prices via Binance WebSocket ---
 function startLivePrices() {
   const trackedSymbols = [
     "BTCUSDT",
@@ -214,10 +298,9 @@ function startLivePrices() {
   const ws = new WebSocket(streamUrl);
 
   ws.onmessage = (event) => {
-    const message = JSON.parse(event.data);
-    const ticker = message.data;
-    const symbol = ticker.s.replace("USDT", "").toLowerCase();
-    const price = parseFloat(ticker.c);
+    const { data } = JSON.parse(event.data);
+    const symbol = data.s.replace("USDT", "").toLowerCase();
+    const price = parseFloat(data.c);
 
     document.querySelectorAll(".crypto-card").forEach((card) => {
       const nameEl = card.querySelector("h4");
@@ -241,7 +324,7 @@ function startLivePrices() {
         }
 
         if (changeEl) {
-          const percent = parseFloat(ticker.P);
+          const percent = parseFloat(data.P);
           changeEl.textContent = `${percent.toFixed(2)}%`;
           changeEl.className =
             percent >= 0
@@ -253,9 +336,19 @@ function startLivePrices() {
   };
 
   ws.onclose = () => {
-    console.warn("Live price connection closed. Reconnecting...");
+    console.warn("🔁 Live price connection closed. Reconnecting...");
     setTimeout(startLivePrices, 5000);
   };
 }
 
 startLivePrices();
+
+// --- Footer Credit ---
+document.addEventListener("DOMContentLoaded", () => {
+  const footer = document.createElement("footer");
+  footer.innerHTML = `
+    <div class="text-center text-gray-500 text-sm mt-6 mb-2">
+      ⚡ Powered by <span class="text-orange-400 font-semibold">KV LABS</span> — Built for the Future
+    </div>`;
+  document.body.appendChild(footer);
+});
