@@ -1,4 +1,4 @@
-// Fetch Top 10 Crypto Data
+// --- Fetch Top 10 Crypto Data ---
 async function fetchCrypto() {
   try {
     const res = await fetch(
@@ -27,7 +27,7 @@ async function fetchCrypto() {
   }
 }
 
-// Fetch Latest Crypto News
+// --- Fetch Latest Crypto News ---
 async function fetchNews() {
   try {
     const res = await fetch(
@@ -58,7 +58,31 @@ async function fetchNews() {
   }
 }
 
-// Search Term OR Coin
+// --- Common Symbol → CoinGecko ID Mappings ---
+const coinMap = {
+  btc: "bitcoin",
+  eth: "ethereum",
+  xrp: "ripple",
+  ada: "cardano",
+  bnb: "binancecoin",
+  sol: "solana",
+  doge: "dogecoin",
+  trx: "tron",
+  matic: "polygon",
+  avax: "avalanche-2",
+  dot: "polkadot",
+  shib: "shiba-inu",
+  ltc: "litecoin",
+  link: "chainlink",
+  ton: "the-open-network",
+  pepe: "pepe",
+  op: "optimism",
+  sui: "sui",
+  apt: "aptos",
+  arb: "arbitrum"
+};
+
+// --- Search Term OR Coin ---
 async function searchTerm() {
   const query = document.getElementById("termInput").value.trim().toLowerCase();
   if (!query) return alert("Enter a term or coin!");
@@ -69,42 +93,53 @@ async function searchTerm() {
   definitionEl.innerText = "";
   coinSection.classList.add("hidden");
 
-  // 1️⃣ Try dictionary term first
+  // --- 1️⃣ Try dictionary term ---
   try {
     const termRes = await fetch(`${window.location.origin}/term/${query}`);
     const termData = await termRes.json();
 
     if (termData.definition !== "No definition found.") {
       definitionEl.innerText = termData.definition;
-      return; // stop here if found as term
+      return;
     }
   } catch (err) {
     console.error("Error fetching term:", err);
   }
 
-  // 2️⃣ Try coin
+  // --- 2️⃣ Try CoinGecko Directly ---
   try {
-    const coinRes = await fetch(`${window.location.origin}/crypto/${query}`);
-    const coinData = await coinRes.json();
+    // Try both full name and abbreviation
+    const possibleIds = [query];
+    if (coinMap[query]) possibleIds.unshift(coinMap[query]); // Add mapped ID first if exists
 
-    if (coinData.error) {
+    let data = null;
+    for (const id of possibleIds) {
+      const res = await fetch(`https://api.coingecko.com/api/v3/coins/${id}`);
+      const json = await res.json();
+      if (!json.error) {
+        data = json;
+        break;
+      }
+    }
+
+    if (!data) {
       alert(
-        "No term or coin found! 🔍\nTip: Search coins like 'xrp' for Ripple, 'ada' for Cardano, 'btc' for Bitcoin."
+        "❌ No term or coin found! Try 'bitcoin', 'xrp', 'ada', 'solana', etc."
       );
       return;
     }
 
-    document.getElementById("coin-name").textContent = coinData.name;
-    document.getElementById("coin-symbol").textContent = `(${coinData.symbol})`;
-    document.getElementById("coin-price").textContent = `💰 $${coinData.price.toLocaleString()}`;
-    document.getElementById("coin-rank").textContent = `Rank: #${coinData.rank}`;
+    document.getElementById("coin-name").textContent = data.name;
+    document.getElementById("coin-symbol").textContent = `(${data.symbol.toUpperCase()})`;
+    document.getElementById("coin-price").textContent = `💰 $${data.market_data.current_price.usd.toLocaleString()}`;
+    document.getElementById("coin-rank").textContent = `Rank: #${data.market_cap_rank}`;
     coinSection.classList.remove("hidden");
   } catch (err) {
     console.error("Error fetching coin:", err);
-    alert("Error fetching coin data.");
+    alert("Couldn't fetch coin data. Try again later.");
   }
 }
 
-// Initial Load
+// --- Initial Load ---
 fetchCrypto();
 fetchNews();
