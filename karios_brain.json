@@ -1,0 +1,12 @@
+{
+  "bitcoin": "Bitcoin is a decentralized digital currency that operates without a central bank.",
+  "blockchain": "A distributed ledger technology that ensures transparency and immutability in data recording.",
+  "ethereum": "Ethereum is a blockchain that allows developers to build decentralized applications using smart contracts.",
+  "nft": "Non-fungible tokens are unique digital assets stored on the blockchain.",
+  "defi": "Decentralized Finance — blockchain-based financial applications removing intermediaries.",
+  "mining": "The process of validating blockchain transactions and adding them to the public ledger.",
+  "gas": "A fee paid to process transactions on the Ethereum network.",
+  "wallet": "A secure application that stores your private and public crypto keys.",
+  "stablecoin": "A cryptocurrency designed to maintain a stable value, often pegged to a fiat currency.",
+  "hashrate": "The speed at which a mining machine operates to solve blockchain computations."
+}

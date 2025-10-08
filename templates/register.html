@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Register — KV Dominate</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="min-h-screen flex items-center justify-center bg-gradient-to-tr from-orange-700 via-gray-900 to-blue-800 text-white">
+  <form action="/register" method="POST" class="bg-black/40 p-8 rounded-2xl shadow-xl w-80">
+    <h2 class="text-2xl font-bold text-center mb-6 text-blue-400">Join KV Dominate</h2>
+    <input type="text" name="username" placeholder="Username" required class="w-full mb-3 px-4 py-2 rounded bg-gray-800 border border-gray-600 focus:outline-none focus:border-blue-400">
+    <input type="password" name="password" placeholder="Password" required class="w-full mb-3 px-4 py-2 rounded bg-gray-800 border border-gray-600 focus:outline-none focus:border-blue-400">
+    <button type="submit" class="w-full bg-blue-500 py-2 rounded hover:bg-orange-600 transition font-semibold">Create Account</button>
+    <p class="text-center text-sm mt-4">Already registered? <a href="/login" class="text-orange-400 hover:underline">Login</a></p>
+  </form>
+</body>
+</html>

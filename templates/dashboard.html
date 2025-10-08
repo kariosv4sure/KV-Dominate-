@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Karios Dashboard — Crypto Hub</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+
+<body class="bg-gradient-to-br from-gray-900 via-black to-blue-900 text-white min-h-screen flex flex-col">
+
+  <!-- Header -->
+  <header class="p-5 bg-black/30 backdrop-blur-lg flex justify-between items-center border-b border-gray-700">
+    <h1 class="text-2xl font-bold text-orange-400">⚡ KV Dominate</h1>
+    <nav class="space-x-4">
+      <a href="/" class="hover:text-orange-400">Home</a>
+      <a href="/logout" class="px-4 py-2 bg-orange-500 rounded-lg hover:bg-blue-600 transition">Logout</a>
+    </nav>
+  </header>
+
+  <!-- Main Content -->
+  <main class="flex-1 p-6">
+
+    <h2 class="text-3xl font-bold text-center text-blue-400 mb-8">
+      Welcome, {{ user }} 👑
+    </h2>
+
+    <!-- Search + Dictionary + Coin -->
+    <section class="max-w-3xl mx-auto mb-12 text-center">
+      <h3 class="text-xl mb-3 text-orange-400 font-semibold">Search Crypto Terms & Coins</h3>
+      <div class="flex justify-center mb-2">
+        <input id="termInput" type="text" placeholder="e.g. blockchain, NFT, DeFi, or BTC"
+          class="px-4 py-2 w-72 rounded-l-lg bg-gray-800 border border-gray-600 focus:outline-none focus:ring-2 focus:ring-orange-400">
+        <button onclick="searchTerm()" class="px-4 py-2 bg-orange-500 rounded-r-lg hover:bg-blue-600 font-semibold transition">
+          Search
+        </button>
+      </div>
+      <p class="text-gray-400 text-sm mt-1">
+        Tip: Search coins by symbol or name. e.g., BTC → Bitcoin, XRP → Ripple, ADA → Cardano.
+      </p>
+      <p id="definition" class="text-gray-300 mt-2 text-lg"></p>
+    </section>
+
+    <!-- Coin Search Result -->
+    <section id="coin-result" class="max-w-2xl mx-auto bg-black/30 p-6 rounded-xl shadow-md text-center hidden mb-10">
+      <h3 id="coin-name" class="text-2xl font-bold text-orange-400 mb-2"></h3>
+      <p id="coin-symbol" class="text-gray-300 mb-2"></p>
+      <p id="coin-price" class="text-xl mb-1"></p>
+      <p id="coin-rank" class="text-sm text-gray-400"></p>
+    </section>
+
+    <!-- Crypto Section -->
+    <section>
+      <h3 class="text-2xl font-semibold mb-4 text-blue-400">🔥 Top 10 Market Highlights</h3>
+      <div id="crypto-section" class="grid md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+    </section>
+
+    <!-- News Section -->
+    <section class="mt-12">
+      <h3 class="text-2xl mb-4 text-orange-400">📰 Latest Crypto News</h3>
+      <div id="news-section" class="space-y-4"></div>
+    </section>
+
+  </main>
+
+  <!-- Footer -->
+  <footer class="bg-black/40 py-6 text-center text-gray-400 border-t border-gray-700 mt-auto">
+    <p>📞 Contact via:
+      <a href="mailto:kariosvantari@gmail.com" class="text-orange-400 hover:underline">kariosvantari@gmail.com</a> |
+      08089368681
+    </p>
+    <p class="text-xs mt-2">© 2025 KV LABS — Built by Karios Vantari</p>
+  </footer>
+
+  <script src="/static/script.js"></script>
+</body>
+</html>
